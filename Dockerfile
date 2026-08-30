@@ -13,7 +13,6 @@ RUN uv sync --frozen
 
 COPY app ./app
 COPY data ./data
-COPY chroma_db ./chroma_db
 
 EXPOSE 8000
 
