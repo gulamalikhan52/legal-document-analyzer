@@ -1,0 +1,10 @@
+@"
+.env
+.venv/
+__pycache__/
+*.pyc
+.git/
+"@ | Set-Content .gitignore
+chroma_db/
+
+vectorstore/
