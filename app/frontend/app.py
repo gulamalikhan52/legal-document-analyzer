@@ -278,7 +278,7 @@ with st.sidebar:
     )
 
     st.caption(
-        "Legal Document Analyzer"
+        "AI-Powered Legal Assistant"
     )
 
     st.markdown(
@@ -332,6 +332,7 @@ with st.sidebar:
     ]
 
     for item in pipeline:
+
         st.markdown(
             f"""
             <div class="pipeline-item">
@@ -357,10 +358,10 @@ with st.sidebar:
 # MAIN HEADER
 # ============================================================
 
-st.title("Legal Document Analyzer")
+st.title("LegalAI")
 
 st.markdown(
-    '<p class="subtitle-text">Ask questions and retrieve answers from your legal document collection.</p>',
+    '<p class="subtitle-text">Ask questions and get AI-powered answers from your legal document collection.</p>',
     unsafe_allow_html=True,
 )
 
@@ -397,17 +398,17 @@ question = st.text_area(
     "Legal Question",
     value=st.session_state.selected_question,
     height=110,
-    placeholder="Ask a question about the legal documents...",
+    placeholder="Ask LegalAI a question about your legal documents...",
     label_visibility="collapsed",
 )
 
 
 # ============================================================
-# ANALYZE BUTTON
+# ASK LEGALAI BUTTON
 # ============================================================
 
-analyze = st.button(
-    "🔍 Analyze Question",
+ask = st.button(
+    "🔍 Ask LegalAI",
     type="primary",
     use_container_width=True,
 )
@@ -466,7 +467,7 @@ for message in st.session_state.messages:
 # API REQUEST
 # ============================================================
 
-if analyze:
+if ask:
 
     clean_question = question.strip()
 
@@ -486,7 +487,7 @@ if analyze:
         )
 
         with st.spinner(
-            "Searching legal documents..."
+            "LegalAI is searching the legal knowledge base..."
         ):
 
             try:
@@ -520,7 +521,10 @@ if analyze:
                     answer,
                 )
 
+                # ------------------------------------------------
                 # Decode common HTML entities
+                # ------------------------------------------------
+
                 answer = (
                     answer
                     .replace("&nbsp;", " ")
@@ -583,3 +587,4 @@ if analyze:
                 st.error(
                     "FastAPI returned an invalid response."
                 )
+                
