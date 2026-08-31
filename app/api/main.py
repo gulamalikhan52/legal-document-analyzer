@@ -10,9 +10,6 @@ app = FastAPI(
 )
 
 
-graph = build_workflow()
-
-
 class QueryRequest(BaseModel):
     query: str
 
@@ -28,14 +25,24 @@ def root():
     }
 
 
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
+
+
 @app.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest):
+
+    graph = build_workflow()
 
     result = graph.invoke(
         {
             "query": request.query,
             "documents": [],
             "reranked_documents": [],
+            "relevant": False,
             "answer": "",
         }
     )
