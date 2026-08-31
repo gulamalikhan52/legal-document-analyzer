@@ -6,6 +6,19 @@ from app.retrieval.reranker import LegalReranker
 from app.generation.answer import generate_answer
 
 
+_reranker = None
+
+
+def get_reranker():
+    global _reranker
+
+    if _reranker is None:
+        print("\nLoading Legal Reranker...")
+        _reranker = LegalReranker()
+
+    return _reranker
+
+
 def retrieve_node(state: GraphState):
 
     query = state["query"]
@@ -33,7 +46,7 @@ def rerank_node(state: GraphState):
 
     print("\nReranking documents...")
 
-    reranker = LegalReranker()
+    reranker = get_reranker()
 
     reranked = reranker.rerank(
         query,
@@ -62,10 +75,7 @@ def check_relevance_node(state: GraphState):
 
     print("\nChecking retrieved context...")
 
-    if not documents:
-        relevant = False
-    else:
-        relevant = True
+    relevant = bool(documents)
 
     print(f"Relevant context: {relevant}")
 
@@ -75,9 +85,6 @@ def check_relevance_node(state: GraphState):
 
 
 def route_after_relevance(state: GraphState):
-
-    if state["relevant"]:
-        return "generate"
 
     return "generate"
 
@@ -103,10 +110,6 @@ def build_workflow():
 
     workflow = StateGraph(GraphState)
 
-    # --------------------------------------------------
-    # NODES
-    # --------------------------------------------------
-
     workflow.add_node(
         "retrieve",
         retrieve_node,
@@ -126,10 +129,6 @@ def build_workflow():
         "generate",
         generate_node,
     )
-
-    # --------------------------------------------------
-    # EDGES
-    # --------------------------------------------------
 
     workflow.add_edge(
         START,

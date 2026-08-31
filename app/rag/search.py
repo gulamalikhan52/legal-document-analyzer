@@ -17,12 +17,32 @@ def get_vectorstore():
 def search(query: str, k: int = 5):
     vectorstore = get_vectorstore()
 
+    # Retrieve extra results so duplicates can be removed
     results = vectorstore.similarity_search_with_score(
         query,
-        k=k,
+        k=k * 2,
     )
 
-    return results
+    unique_results = []
+    seen = set()
+
+    for document, score in results:
+        key = (
+            document.metadata.get("source_file"),
+            document.metadata.get("page"),
+            document.page_content.strip(),
+        )
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        unique_results.append((document, score))
+
+        if len(unique_results) >= k:
+            break
+
+    return unique_results
 
 
 if __name__ == "__main__":
