@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.graph.workflow import build_workflow
 
 
 app = FastAPI(
-    title="Legal Document Analyzer",
+    title="LegalAI",
     version="1.0.0",
 )
 
@@ -18,10 +18,14 @@ class QueryResponse(BaseModel):
     answer: str
 
 
+# Build workflow once when the application starts
+graph = build_workflow()
+
+
 @app.get("/")
 def root():
     return {
-        "message": "Legal Document Analyzer API is running"
+        "message": "LegalAI API is running"
     }
 
 
@@ -35,18 +39,24 @@ def health():
 @app.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest):
 
-    graph = build_workflow()
+    try:
+        result = graph.invoke(
+            {
+                "query": request.query,
+                "documents": [],
+                "reranked_documents": [],
+                "relevant": False,
+                "answer": "",
+            }
+        )
 
-    result = graph.invoke(
-        {
-            "query": request.query,
-            "documents": [],
-            "reranked_documents": [],
-            "relevant": False,
-            "answer": "",
+        return {
+            "answer": result["answer"]
         }
-    )
 
-    return {
-        "answer": result["answer"]
-    }
+    except Exception as e:
+        print(f"ERROR in /ask: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"{type(e).__name__}: {str(e)}"
+        )

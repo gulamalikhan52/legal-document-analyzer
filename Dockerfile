@@ -13,7 +13,8 @@ RUN uv sync --frozen
 
 COPY app ./app
 COPY data ./data
+COPY chroma_db ./chroma_db
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "echo PORT=$PORT && exec uv run uvicorn app.api.main:app --host 0.0.0.0 --port $PORT --log-level info"]
+CMD ["sh", "-c", "uv run uvicorn app.api.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
