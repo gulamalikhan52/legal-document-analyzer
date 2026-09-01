@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.graph.workflow import build_workflow
-from app.retrieval.hybrid import initialize_retrieval
 
 
 app = FastAPI(
@@ -24,17 +23,17 @@ class QueryResponse(BaseModel):
 
 @app.on_event("startup")
 def startup_event():
+
     print("\n" + "=" * 70)
     print("STARTING LEGALAI BACKEND")
     print("=" * 70)
-
-    initialize_retrieval()
 
     print("\nLEGALAI BACKEND READY")
 
 
 @app.get("/")
 def root():
+
     return {
         "message": "LegalAI API is running"
     }
@@ -42,6 +41,7 @@ def root():
 
 @app.get("/health")
 def health():
+
     return {
         "status": "healthy"
     }

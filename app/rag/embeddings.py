@@ -1,20 +1,24 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 
+_embedding_model = None
+
 
 def get_embedding_model():
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
 
+    global _embedding_model
 
-if __name__ == "__main__":
-    embeddings = get_embedding_model()
+    if _embedding_model is None:
 
-    text = "What are the principles governing bail?"
+        print("Loading embedding model...")
 
-    vector = embeddings.embed_query(text)
+        _embedding_model = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={
+                "device": "cpu"
+            },
+            encode_kwargs={
+                "normalize_embeddings": True
+            },
+        )
 
-    print(f"Embedding dimensions: {len(vector)}")
-    print(f"First 10 values: {vector[:10]}")
+    return _embedding_model
