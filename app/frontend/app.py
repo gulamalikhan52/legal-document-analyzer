@@ -11,9 +11,8 @@ import streamlit as st
 
 BACKEND_URL = os.getenv(
     "BACKEND_URL",
-    "http://backend:8000",
+    "https://legal-document-gulamali-ai.onrender.com",
 )
-
 API_URL = f"{BACKEND_URL}/ask"
 
 
