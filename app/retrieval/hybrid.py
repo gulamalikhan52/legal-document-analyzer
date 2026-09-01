@@ -6,28 +6,113 @@ from app.rag.embeddings import get_embedding_model
 from app.rag.vectorstore import get_vectorstore
 
 
+# ============================================================
+# CACHE RAG RESOURCES
+# ============================================================
+
+_documents = None
+_chunks = None
+_bm25 = None
+_vectorstore = None
+
+
+def initialize_retrieval():
+    global _documents
+    global _chunks
+    global _bm25
+    global _vectorstore
+
+    if (
+        _documents is not None
+        and _chunks is not None
+        and _bm25 is not None
+        and _vectorstore is not None
+    ):
+        return
+
+    print("\n" + "=" * 70)
+    print("INITIALIZING RAG RETRIEVAL")
+    print("=" * 70)
+
+    # --------------------------------------------------
+    # LOAD DOCUMENTS
+    # --------------------------------------------------
+
+    print("\nLoading documents...")
+
+    _documents = load_documents()
+
+    # --------------------------------------------------
+    # CHUNK DOCUMENTS
+    # --------------------------------------------------
+
+    print("\nChunking documents...")
+
+    _chunks = chunk_documents(_documents)
+
+    print(f"Total chunks: {len(_chunks)}")
+
+    # --------------------------------------------------
+    # VECTOR STORE
+    # --------------------------------------------------
+
+    print("\nLoading vector store...")
+
+    _vectorstore = get_vectorstore()
+
+    # --------------------------------------------------
+    # BM25
+    # --------------------------------------------------
+
+    print("\nBuilding BM25 index...")
+
+    tokenized_chunks = [
+        chunk.page_content.lower().split()
+        for chunk in _chunks
+    ]
+
+    _bm25 = BM25Okapi(tokenized_chunks)
+
+    print("BM25 index ready.")
+
+    print("\n" + "=" * 70)
+    print("RAG RETRIEVAL READY")
+    print("=" * 70)
+
+
 def reciprocal_rank_fusion(vector_docs, bm25_docs, k=60):
+
     scores = {}
     documents = {}
 
     for rank, doc in enumerate(vector_docs, start=1):
+
         doc_id = (
             doc.metadata.get("source_file"),
             doc.metadata.get("page"),
             doc.page_content,
         )
 
-        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank)
+        scores[doc_id] = (
+            scores.get(doc_id, 0)
+            + 1 / (k + rank)
+        )
+
         documents[doc_id] = doc
 
     for rank, doc in enumerate(bm25_docs, start=1):
+
         doc_id = (
             doc.metadata.get("source_file"),
             doc.metadata.get("page"),
             doc.page_content,
         )
 
-        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank)
+        scores[doc_id] = (
+            scores.get(doc_id, 0)
+            + 1 / (k + rank)
+        )
+
         documents[doc_id] = doc
 
     ranked = sorted(
@@ -36,26 +121,29 @@ def reciprocal_rank_fusion(vector_docs, bm25_docs, k=60):
         reverse=True,
     )
 
-    return [documents[doc_id] for doc_id, _ in ranked]
+    return [
+        documents[doc_id]
+        for doc_id, _ in ranked
+    ]
 
 
-def hybrid_search(query, vector_k=15, bm25_k=15, candidate_k=20):
-    print("Loading documents...")
+def hybrid_search(
+    query,
+    vector_k=15,
+    bm25_k=15,
+    candidate_k=20,
+):
 
-    documents = load_documents()
-    chunks = chunk_documents(documents)
-
-    print(f"Total chunks: {len(chunks)}")
+    # Make sure resources are loaded only once.
+    initialize_retrieval()
 
     # --------------------------------------------------
     # VECTOR SEARCH
     # --------------------------------------------------
 
-    print("Loading vector store...")
+    print("\nRunning vector search...")
 
-    vectorstore = get_vectorstore()
-
-    vector_results = vectorstore.similarity_search(
+    vector_results = _vectorstore.similarity_search(
         query,
         k=vector_k,
     )
@@ -64,16 +152,11 @@ def hybrid_search(query, vector_k=15, bm25_k=15, candidate_k=20):
     # BM25 SEARCH
     # --------------------------------------------------
 
-    tokenized_chunks = [
-        chunk.page_content.lower().split()
-        for chunk in chunks
-    ]
-
-    bm25 = BM25Okapi(tokenized_chunks)
+    print("Running BM25 search...")
 
     query_tokens = query.lower().split()
 
-    bm25_scores = bm25.get_scores(query_tokens)
+    bm25_scores = _bm25.get_scores(query_tokens)
 
     top_bm25_indices = sorted(
         range(len(bm25_scores)),
@@ -82,7 +165,7 @@ def hybrid_search(query, vector_k=15, bm25_k=15, candidate_k=20):
     )[:bm25_k]
 
     bm25_results = [
-        chunks[i]
+        _chunks[i]
         for i in top_bm25_indices
     ]
 
@@ -93,6 +176,11 @@ def hybrid_search(query, vector_k=15, bm25_k=15, candidate_k=20):
     hybrid_results = reciprocal_rank_fusion(
         vector_results,
         bm25_results,
+    )
+
+    print(
+        f"Hybrid candidates: "
+        f"{len(hybrid_results[:candidate_k])}"
     )
 
     return hybrid_results[:candidate_k]

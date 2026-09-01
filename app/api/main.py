@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.graph.workflow import build_workflow
+from app.retrieval.hybrid import initialize_retrieval
 
 
 app = FastAPI(
@@ -19,6 +20,17 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
+
+
+@app.on_event("startup")
+def startup_event():
+    print("\n" + "=" * 70)
+    print("STARTING LEGALAI BACKEND")
+    print("=" * 70)
+
+    initialize_retrieval()
+
+    print("\nLEGALAI BACKEND READY")
 
 
 @app.get("/")
@@ -43,6 +55,7 @@ def ask_question(request: QueryRequest):
             "query": request.query,
             "documents": [],
             "reranked_documents": [],
+            "relevant": False,
             "answer": "",
         }
     )
