@@ -14,6 +14,6 @@ COPY app ./app
 COPY data ./data
 COPY chroma_db ./chroma_db
 
-EXPOSE 10000
+EXPOSE 8000
 
-CMD ["sh", "-c", "uv run uvicorn app.api.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["uv", "run", "uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
