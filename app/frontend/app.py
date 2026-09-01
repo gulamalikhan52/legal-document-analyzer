@@ -587,4 +587,3 @@ if ask:
                 st.error(
                     "FastAPI returned an invalid response."
                 )
-                

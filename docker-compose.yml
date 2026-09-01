@@ -1,8 +1,9 @@
 services:
+
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
 
     container_name: legalai-backend
 
@@ -14,27 +15,23 @@ services:
 
     volumes:
       - ./data:/app/data
-      - ./vectorstore:/app/vectorstore
+      - ./chroma_db:/app/chroma_db
 
     restart: unless-stopped
+
 
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.frontend
 
     container_name: legalai-frontend
-
-    command: >
-      uv run streamlit run app/frontend/app.py
-      --server.address=0.0.0.0
-      --server.port=8501
 
     ports:
       - "8501:8501"
 
     environment:
-      API_URL: http://backend:8000/ask
+      BACKEND_URL: http://backend:8000
 
     depends_on:
       - backend
